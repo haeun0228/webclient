@@ -6,13 +6,15 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget)
 {
     ui->setupUi(this);
+    ui->pbDisconnect->setEnabled(false);
+    ui->pbClear->setEnabled(false);
     //socket_.connected();
     //socket_.readyRead();
+    //socket_.state();
     port = "80";
     QObject::connect(&socket_, &QAbstractSocket::connected, this, &Widget::doConnected);
     QObject::connect(&socket_, &QAbstractSocket::disconnected, this, &Widget::doDisconnected);
     QObject::connect(&socket_, &QIODevice::readyRead, this, &Widget::doReadyRead);
-    //socket_.state();
 }
 
 Widget::~Widget()
@@ -23,11 +25,17 @@ Widget::~Widget()
 void Widget::doConnected()
 {
     ui->pteMessage->insertPlainText("Connected.");
+    if(socket_.state()==QAbstractSocket::ConnectedState || socket_.state()==QAbstractSocket::ConnectingState){
+        ui->pbDisconnect->setEnabled(true);
+    }
 }
 
 void Widget::doDisconnected()
 {
     ui->pteMessage->insertPlainText("Disconnected");
+    if(socket_.state()!=QAbstractSocket::ConnectedState && socket_.state()!=QAbstractSocket::ConnectingState){
+        ui->pbClear->setEnabled(true);
+    }
 }
 
 void Widget::doReadyRead()
@@ -45,18 +53,19 @@ void Widget::on_pbConnect_clicked()
         socket_.connectToHost(ui->leHost->text(), port.toUShort());
 }
 
-
-void Widget::on_pbClear_clicked()
+void Widget::on_pbDisconnect_clicked()
 {
     socket_.disconnectFromHost();
 }
 
 
-void Widget::on_pbDisconnect_clicked()
+void Widget::on_pbClear_clicked()
 {
     ui->pteMessage->clear();
-}
+    ui->pbDisconnect->setEnabled(false);
+    ui->pbClear->setEnabled(false);
 
+}
 
 void Widget::on_pbSend_clicked()
 {
